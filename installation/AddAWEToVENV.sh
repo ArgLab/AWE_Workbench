@@ -12,6 +12,16 @@
 # servermanagement directory.
 
 
+# Argument
+# --------------------------------------------
+# This script takes one argument which should be the
+# path to the same VENV that we are using for writing
+# observer.
+
+VIRTUAL_ENV="$1"
+echo "USING VENV: $VIRTUAL_ENV"
+
+
 # Parameters:
 # ---------------------------------------------
 PYTHON_CMD="python"
@@ -20,10 +30,6 @@ PIP_CMD="pip"
 CODE_REPOS_LOC="../../"
 
 
-# Argument
-# --------------------------------------------
-VIRTUAL_ENV="$1"
-echo "USING VENV: $VIRTUAL_ENV"
 
 
 # Activate VENV
