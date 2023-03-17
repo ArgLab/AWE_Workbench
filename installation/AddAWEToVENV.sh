@@ -42,6 +42,16 @@ source "$VIRTUAL_ENV/bin/activate"
 # 2) Change to Repo Directory and load Holmes Expandable:
 #      pip install -e .
 
+# If we plan to use a GPU then this line must also
+# be run.  Comment out the code below if you do
+# not want cuda installed or edit it for your
+# library version.
+echo -e "\n=== Installing Spacy CUDA, comment out if not needed. ==="
+echo -e "\n    Using CUDA v. 117"
+cd ..
+"$PIP_CMD" install spacy[cuda117]
+
+
 echo -e "\n=== Installing Holmes Extractor ==="
 "$PIP_CMD" install -e "$CODE_REPOS_LOC/holmes-extractor-expandable/"
 
