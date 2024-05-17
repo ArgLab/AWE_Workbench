@@ -455,7 +455,6 @@ class parserServer:
                 command = 'LEMMAS'
                 label = messagelist[1]
                 doc = self.parser.get_document(label)
-\
                 await websocket.send(doc._.AWE_Info(indicator='lemma_'))
             elif messagelist[0] == 'STOPWORDS':
                 label = messagelist[1]
