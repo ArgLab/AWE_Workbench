@@ -609,7 +609,7 @@ class parserServer:
                 # in the document
                 label = messagelist[1]
                 doc = self.parser.get_document(label)
-                await websocket.send(json_dumps(
+                await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='concreteness')))
             elif messagelist[0] == 'ABSTRACTTRAITS':
                 command = 'ABSTRACTTRAITS'
