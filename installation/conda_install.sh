@@ -40,6 +40,10 @@ then
     pip install -e "$CODE_REPOS_LOC/AWE_Components/"
     pip install -e "$CODE_REPOS_LOC/AWE_Workbench/"
 
+    # Patch: protobuf==3.20.0
+    # Data does not properly install without this patch.
+    pip install protobuf==3.20.0
+
     # Install data
     echo "\n\n Installing data..."
 
