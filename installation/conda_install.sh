@@ -5,8 +5,9 @@
 
 # This script installs all necessary dependencies for AWE for python 3.11.
 # We make the following assumptions:
-# * You have a working conda environment running on python 3.11
+# * You have a working conda environment running on python 3.11.
 # * You are cd'd into the AWE_Workbench project directory.
+# * You have pip installed in the conda environment.
 
 # Sanity Check: let the user know the preconditions.
 
