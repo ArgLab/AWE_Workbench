@@ -46,17 +46,17 @@ source "$VIRTUAL_ENV/bin/activate"
 #                                                                                                                                      
 # Note that by default we seem to be unable to rely                                                                                    
 # on spacy to pull the right cuda on its own                                                                                           
-echo -e "\n=== Installing Spacy CUDA, comment out if not needed. ==="
-echo -e "\n    Using CUDA v. 117"                                                                                                     
-"$PIP_CMD" install spacy[cuda117]
+#echo -e "\n=== Installing Spacy CUDA, comment out if not needed. ==="
+#echo -e "\n    Using CUDA v. 117"                                                                                                     
+#"$PIP_CMD" install spacy[cuda117]
 
 # If you are using cuda 12.1 as we are on some                                                                                         
 # systems then spacy's passthrough install will                                                                                        
 # not work.  Therefore you will need a two-step                                                                                        
 # process.                                                                                                                             
-#echo -e "\n    Using CUDA v. 12.x"
-#"$PIP_CMD" install cupy-cuda12x
-#"$PIP_CMD" install spacy[cuda12x]
+echo -e "\n    Using CUDA v. 12.x"
+"$PIP_CMD" install cupy-cuda12x
+"$PIP_CMD" install spacy[cuda12x]
 
 
 # Package Installation
@@ -78,6 +78,11 @@ echo -e "\n\n === Installing AWE Components ==="
 
 echo -e "\n\n=== Installing Workbench ==="
 "$PIP_CMD" install -e "$CODE_REPOS_LOC/AWE_Workbench"
+
+echo -e "\n\n=== Making specialized pydantic fixes. =="
+"$PIP_CMD" install --upgrade spacy==3.5.4
+"$PIP_CMD" install --upgrade typing-extensions==4.9.0
+"$PIP_CMD" install --upgrade pydantic==1.10.12
 
 
 # Necessary Datafiles.
