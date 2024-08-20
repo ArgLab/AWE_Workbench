@@ -1,17 +1,35 @@
-#!/usr/bin/env python3.10
-# Copyright 2022, Educational Testing Service
+"""
+--- [ Test: parserServer.py ] -----------------------------------------------------------
 
+Main server for parsing commands regarding spacy pipeline.
+
+@8/20/2024: modifications made to function without the use of holmes-extractor; this is 
+to make AWE_Workbench far easier to manage regarding dependency issues.
+
+Author: Caleb Scott (cwscott3@ncsu.edu)
+
+Copyright 2022, Educational Testing Service
+
+-----------------------------------------------------------------------------------------
+"""
+
+# --- [ IMPORTS ] -----------------------------------------------------------------------
+
+# Basic lib imports
 import asyncio
 import base64
 import websockets
 import json
-import awe_workbench
+
+# AWE imports
 import holmes_extractor
 import holmes_extractor.manager
 import holmes_extractor.ontology
-from holmes_extractor.manager import Manager
-from holmes_extractor.ontology import Ontology
 from awe_components.components.utility_functions import content_pos
+
+# --- [ CONSTS/VARS ] -------------------------------------------------------------------
+
+# --- [ CLASSES ] -----------------------------------------------------------------------
 
 class parserServer:
 
@@ -1322,6 +1340,10 @@ class parserServer:
             else:
                 await websocket.send(False)
 
+# --- [ MAIN ] --------------------------------------------------------------------------
+
 if __name__ == '__main__':
     print('parser server loading')
     wsc = parserServer()
+
+# --- [ END ] ---------------------------------------------------------------------------
