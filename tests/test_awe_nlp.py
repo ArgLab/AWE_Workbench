@@ -13,8 +13,17 @@ Author: Caleb Scott (cwscott3@ncsu.edu)
 import unittest
 import json
 import spacy
+import coreferee
+import spacytextblob.spacytextblob
+
+import awe_components.components.lexicalFeatures
+import awe_components.components.syntaxDiscourseFeats
+import awe_components.components.viewpointFeatures
+import awe_components.components.lexicalClusters
+import awe_components.components.contentSegmentation
 
 from awe_workbench.pipeline import pipeline_def
+from examples.essays.essays import get_essay
 
 # --- [ CONSTS/VARS ] -------------------------------------------------------------------
 
@@ -22,7 +31,7 @@ SPACY_MODEL = 'en_core_web_lg'
 
 COMPONENTS = [el['component'] for el in pipeline_def]
 
-TEST_TEXT_LOC = "awe_workbench/examples/essays/gre6.txt"
+TEST_TEXT = "gre6.txt"
 
 # --- [ CLASSES ] -----------------------------------------------------------------------
 
@@ -37,6 +46,7 @@ class AWENLPTest(unittest.TestCase):
         # Initialize the pipeline
         try:
             self.nlp = spacy.load(SPACY_MODEL)
+            self.nlp.add_pipe('coreferee')
             for comp in COMPONENTS:
                 self.nlp.add_pipe(comp)
         except OSError as e:
@@ -44,8 +54,7 @@ class AWENLPTest(unittest.TestCase):
             raise OSError() from e
         
         # Now get the text
-        with open(TEST_TEXT_LOC, 'r') as in_file:
-            self.doc = self.nlp(in_file.read())
+        self.doc = self.nlp(get_essay(TEST_TEXT))
 
     def test_is_academic(self):
         self.assertEqual(self.doc._.AWE_Info(indicator='is_academic',summaryType='percent'), 22)
