@@ -33,9 +33,6 @@ from awe_components.components.utility_functions import content_pos
 
 class parserServer:
 
-    # Initialize
-    parser = None
-
     def __init__(self, pipeline_def=[]):
 
         # set up and initializing Holmes
