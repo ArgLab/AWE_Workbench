@@ -29,6 +29,12 @@ from awe_components.components.utility_functions import content_pos
 
 # --- [ CONSTS/VARS ] -------------------------------------------------------------------
 
+HOST = 'localhost'
+PORT = 8766
+MAX_DATA_LIMIT = 2 ** 24
+
+SPACY_MODEL = 'en_core_web_lg'
+
 # --- [ CLASSES ] -----------------------------------------------------------------------
 
 class parserServer:
@@ -40,12 +46,12 @@ class parserServer:
         # You can try setting overall_similarity_threshold
         # to 0.85 and/or perform_coreference_resolution to False
         self.parser = holmes_extractor.manager.Manager(
-            model='en_core_web_lg',
+            model=SPACY_MODEL,
             perform_coreference_resolution=True,
             extra_components=pipeline_def)
 
         asyncio.get_event_loop().run_until_complete(
-            websockets.serve(self.run_parser, 'localhost', 8766, max_size=2 ** 24))
+            websockets.serve(self.run_parser, HOST, PORT, max_size=MAX_DATA_LIMIT))
         print('parser running')
         asyncio.get_event_loop().run_forever()
         print('died')
