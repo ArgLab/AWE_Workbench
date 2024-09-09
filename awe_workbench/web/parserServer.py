@@ -20,46 +20,208 @@ import asyncio
 import base64
 import websockets
 import json
+import spacy
+import coreferee
+import spacytextblob.spacytextblob
 
 # AWE imports
-import holmes_extractor
-import holmes_extractor.manager
-import holmes_extractor.ontology
 from awe_components.components.utility_functions import content_pos
+import awe_components.components.lexicalFeatures
+import awe_components.components.syntaxDiscourseFeats
+import awe_components.components.viewpointFeatures
+import awe_components.components.lexicalClusters
+import awe_components.components.contentSegmentation
+from awe_workbench.pipeline import pipeline_def
 
 # --- [ CONSTS/VARS ] -------------------------------------------------------------------
 
 HOST = 'localhost'
 PORT = 8766
 MAX_DATA_LIMIT = 2 ** 24
-
 SPACY_MODEL = 'en_core_web_lg'
+COMPONENTS = [el['component'] for el in pipeline_def]
+AWE_INFO_KEYS = ['indicator', 'infoType', 'summaryType', 'filters', 'transformations']
 
 # --- [ CLASSES ] -----------------------------------------------------------------------
 
 class parserServer:
 
-    def __init__(self, pipeline_def=[]):
+    def __init__(self):
 
-        # set up and initializing Holmes
-        # Start the Holmes manager with the English model
-        # You can try setting overall_similarity_threshold
-        # to 0.85 and/or perform_coreference_resolution to False
-        self.parser = holmes_extractor.manager.Manager(
-            model=SPACY_MODEL,
-            perform_coreference_resolution=True,
-            extra_components=pipeline_def)
+        # Set up the NLP pipeline
+        print("initializing NLP pipeline...")
+        try:
+            self.nlp = spacy.load(SPACY_MODEL)
+            for comp in COMPONENTS:
+                self.nlp.add_pipe(comp)
+        except OSError as e:
+            print("There was an error loading 'en_core_web_lg' from spacy.")
+            raise OSError() from e
+        
+        # Instead of using holmes, we save the docs in memory
+        self.docs = {}
+        self.partial = ""
 
+        # Start the event loop, and run until the kill command
+        print("starting event loop -- use [KILL] command to terminate.")
         asyncio.get_event_loop().run_until_complete(
             websockets.serve(self.run_parser, HOST, PORT, max_size=MAX_DATA_LIMIT))
-        print('parser running')
+        print('parser server running...')
         asyncio.get_event_loop().run_forever()
-        print('died')
+        print('parser server terminated...')
 
     async def kill(self, websocket):
+        """
+        Command called to kill the parser server.
+        """
         self.parser.close()
+        await websocket.send(json.dumps(True))
         await websocket.close()
         exit()
+
+    def clear_parsed(self):
+        """
+        Resets the document store to an empty mapping.
+        """
+        self.docs = {}
+        return True
+    
+    def remove(self, label):
+        """
+        Removes a document from the document store.
+        """
+        del self.docs[label]
+        return True
+    
+    def parse_one(self, label, text):
+        """
+        Parses a single document, and adds it to the document store.
+
+        NOTE: we overwrite documents with the same key.
+        """
+        self.docs[label] = self.partial + self.nlp(text)
+        self.partial = ""
+        print(f"parsed document: {label}")
+        return True
+    
+    def partial_text(self, text):
+        """
+        Adds partial text to be processed in the future.
+        """
+        self.partial += text
+        return True
+    
+    def parse_set(self, doc_set):
+        """
+        Parses a document list of tuples (labels, text).
+        """
+        for label, text in doc_set:
+            self.parse_one(label, text)
+        return True
+    
+    def labels(self):
+        """
+        Returns a list of all document labels.
+        """
+        return list(self.docs.keys())
+    
+    def serialized(self, label):
+        """
+        Returns a serialized document, selected by label
+        """
+        return base64.b64encode(self.docs[label])
+    
+    def new_search_phrase(self):
+        pass
+
+    def remove_labeled_search(self):
+        pass
+
+    def clear_searches(self):
+        pass
+
+    def show_search_labels(self):
+        pass
+
+    def match_documents(self):
+        pass
+
+    def frequencies(self):
+        pass
+
+    def topic_matches(self):
+        pass
+
+    def awe_info(self, label, *args):
+        """
+        Returns information specified in an AWE_Info object.
+
+        This information is determined by:
+        * indic - indicator name
+        * itype - information type
+        * summ  - summary type
+        * filt  - filters
+        * trans - transformations
+        """
+        doc = self.docs[label]
+        kwargs = {}
+
+        # Get the appropriate arguments for AWE_Info
+        # Since we have a list of values, we need to map them first
+        for i, val in enumerate(args):
+            kwargs[AWE_INFO_KEYS[i]] = val
+        if not kwargs:
+            return None
+        else:
+            return doc._.AWE_Info(**kwargs)
+
+    def fast_map_awe_info(self, command):
+        """
+        Maps to awe_info(), given a simple command
+        """
+        pass
+
+    def doc_heads(self, label):
+        """
+        Returns list of token heads for a given document.
+        """
+        doc = self.docs[label]
+        return [token.head.i for token in doc]
+
+    def pos(self, label):
+        """
+        Returns positions of tokens for a given document.
+        """
+        doc = self.docs[label]
+        return [token.pos_ for token in doc]
+
+    def doc_dependencies(self, label):
+        """
+        Returns dependencies of tokens for a given document.
+        """
+        doc = self.docs[label]
+        return [token.dep_ for token in doc]
+
+    def doc_entities(self, label):
+        """
+        Returns all entities for a given document.
+        """
+        doc = self.docs[label]
+        return [
+            [
+                ent.text, 
+                ent.start_char, 
+                ent.end_char, 
+                ent.label_
+            ] for ent in doc.ents
+        ]
+
+    def tok_vecs(self, label):
+        """
+        Returns token vectors for a given document.
+        """
+        doc = self.docs[label]
+        return doc._.token_vectors
 
     summaryLabels = [
         'mean_nSyll',
