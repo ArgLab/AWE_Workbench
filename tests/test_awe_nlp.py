@@ -46,7 +46,6 @@ class AWENLPTest(unittest.TestCase):
         # Initialize the pipeline
         try:
             self.nlp = spacy.load(SPACY_MODEL)
-            self.nlp.add_pipe('coreferee')
             for comp in COMPONENTS:
                 self.nlp.add_pipe(comp)
         except OSError as e:
