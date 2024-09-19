@@ -40,7 +40,6 @@
 # module that rougly identifies main ideas/supporting ideas/details in
 # argument-style texts.
 
-<<<<<<< HEAD
 pipeline_def = [
     {
         'package': 'spacytextblob',
