@@ -1,11 +1,14 @@
 #!/usr/bin/env python3.10
 # Copyright 2022, Educational Testing Service
 
+import awe_workbench
 import asyncio
 import base64
 import websockets
 import json
-import awe_workbench
+import spacy
+import coreferee
+import spacytextblob.spacytextblob
 
 # commented out cause we dont use them anymore
 # import holmes_extractor
@@ -14,6 +17,27 @@ import awe_workbench
 # from holmes_extractor.manager import Manager
 # from holmes_extractor.ontology import Ontology
 from awe_components.components.utility_functions import content_pos
+import awe_components.components.lexicalFeatures
+import awe_components.components.syntaxDiscourseFeats
+import awe_components.components.viewpointFeatures
+import awe_components.components.lexicalClusters
+import awe_components.components.contentSegmentation
+from awe_components.components.utility_functions import content_pos
+from awe_workbench.pipeline import pipeline_def
+
+
+
+# --- [ CONSTS/VARS ] -------------------------------------------------------------------
+
+HOST = 'localhost'
+PORT = 8766
+MAX_DATA_LIMIT = 2 ** 24
+SPACY_MODEL = 'en_core_web_lg'
+COMPONENTS = [el['component'] for el in pipeline_def]
+AWE_INFO_KEYS = ['indicator', 'infoType', 'summaryType', 'filters', 'transformations']
+
+# --- [ CLASSES ] -----------------------------------------------------------------------
+
 
 class parserServer:
 
@@ -246,20 +270,27 @@ class parserServer:
                 await websocket.send(json.dumps(True))
                 await self.kill(websocket)
             elif command == 'CLEARPARSED':
-                self.parser.remove_all_documents()
+                self.documents.clear()
                 await websocket.send(json.dumps(True))
             elif command == 'REMOVE':
                 label = messagelist[1]
-                self.parser.remove_document(label)
+                if label in self.documents:
+                    del self.documents[label]
+                # self.parser.remove_document(label)
                 await websocket.send(json.dumps(True))
             elif command == 'PARSEONE':
                 label = messagelist[1]
                 text = current_doc + messagelist[2]
                 current_doc = ''
-                if label in self.parser.list_document_labels():
-                    self.parser.remove_document(label)
-                self.parser.parse_and_register_document(text, label)
-                doc = self.parser.get_document(label)
+                #if label in self.parser.list_document_labels():
+                #    self.parser.remove_document(label)
+                #self.parser.parse_and_register_document(text, label)
+                #doc = self.parser.get_document(label)
+                if label in self.documents:
+                    del self.documents[label]
+                self.documents[label] = text
+                self.documents[label] = text
+                doc = self.documents[label]
                 await websocket.send(json.dumps(True))
             elif command == 'PARTIALTEXT':
                 # possibly need to set command = ' '
@@ -271,38 +302,51 @@ class parserServer:
                     text = texts[i]
                     print('parsed document', str(i+1), 'of', len(texts))
                     if text is not None and len(text) > 0:
-                        if labels[i] in self.parser.list_document_labels():
-                            self.parser.remove_document(labels[i])
-                        self.parser.parse_and_register_document(
-                            text, labels[i])
+                        #if labels[i] in self.parser.list_document_labels():
+                        #    self.parser.remove_document(labels[i])
+                        #self.parser.parse_and_register_document(
+                        #    text, labels[i])
+
+                        if labels[i]in self.documents:
+                            del self.documents[labels[i]]
+                        self.documents[labels[i]] = text
                 await websocket.send(json.dumps(True))
             elif command == 'LABELS':
-                labels = self.parser.list_document_labels()
+                # labels = self.parser.list_document_labels()
+                labels = list(self.documents.keys())
                 await websocket.send(json.dumps(labels))
             elif command == 'SERIALIZED':
                 label = messagelist[1]
+                #serialized = base64.b64encode(
+                #    self.parser.serialize_document(label))
                 serialized = base64.b64encode(
-                    self.parser.serialize_document(label))
+                    self.documents[label].encode('utf-8'))
                 await websocket.send(serialized)
             elif command == 'NEWSEARCHPHRASE':
                 search_phrase_text = messagelist[1]
                 label = messagelist[2]
-                ok = self.parser.register_search_phrase(search_phrase_text)
+                # ok = self.parser.register_search_phrase(search_phrase_text)
+                ok = (search_phrase_text in self.documents[label])
                 await websocket.send(ok)
             elif command == 'REMOVELABELEDSEARCH':
+                #TODO: where are all search phrases? I need to remove all of them that have a given label
                 label = messagelist[1]
                 self.parser.remove_all_search_phrases_with_label(label)
                 await websocket.send(json.dumps(True))
             elif command == 'CLEARSEARCHES':
+                #TODO: where are all search phrases? I need to clear all of them
                 self.parser.remove_all_search_phrases()
                 await websocket.send(json.dumps(True))
             elif command == 'SHOWSEARCHLABELS':
+                #TODO: where are all search phrases? I need to list all of them
                 labels = self.parser.list_search_phrase_labels()
                 await websocket.send(json.dumps(labels))
             elif command == 'MATCH_DOCUMENTS':
+                # TODO what does the match() function do?
                 matches = self.parser.match()
                 await websocket.send(json.dumps(matches))
             elif command == 'FREQUENCIES':
+                # TODO whats this lol
                 freqinfo = self.parser.get_corpus_frequency_information()
                 await websocket.send(json.dumps(freqinfo))
             elif command == 'TOPIC_MATCHES':
@@ -312,17 +356,22 @@ class parserServer:
                 # expose all of these parameters in more complex topic
                 # match functionality. Holmes extractor documentation
                 # describes what each of these parameters involves.
-                matches = self.parser.topic_match_documents_against(
-                    text_to_match,
-                    word_embedding_match_threshold=.42,
-                    relation_score=20,
-                    reverse_only_relation_score=15,
-                    single_word_score=10,
-                    single_word_any_tag_score=5,
-                    different_match_cutoff_score=10,
-                    relation_matching_frequency_threshold=0.0,
-                    embedding_matching_frequency_threshold=0.0,
-                    use_frequency_factor=True)
+                
+                #matches = self.parser.topic_match_documents_against(
+                #    text_to_match,
+                #    word_embedding_match_threshold=.42,
+                #    relation_score=20,
+                #    reverse_only_relation_score=15,
+                #    single_word_score=10,
+                #    single_word_any_tag_score=5,
+                #   different_match_cutoff_score=10,
+                #   relation_matching_frequency_threshold=0.0,
+                #    embedding_matching_frequency_threshold=0.0,
+                #    use_frequency_factor=True)
+                
+                if text_to_match in self.documents:
+                    matches = self.documents[text_to_match]
+                #TODO need an else block I think
                 await websocket.send(json.dumps(matches))
             # Holmes Extractor also has supervised topic model
             # building facilities using the functions
@@ -332,7 +381,7 @@ class parserServer:
             #      building.
             elif command == 'AWE_INFO':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 indic = None
                 itype = None
                 summ = None
@@ -385,7 +434,7 @@ class parserServer:
                     await websocket.send(json.dumps([]))
             elif command == 'DOCTOKENS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 if doc is not None:
                     await websocket.send(
                         doc._.AWE_Info(indicator='text'))
@@ -393,7 +442,7 @@ class parserServer:
                     await websocket.send(json.dumps([]))
             elif command == 'DOCTOKENS_WITH_WS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 if doc is not None:
                     await websocket.send(
                         doc._.AWE_Info(indicator='text_with_ws'))
@@ -403,28 +452,28 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 heads = [token.head.i for token in doc]
                 await websocket.send(json.dumps(heads))
             elif command == 'POS':
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 heads = [token.pos_ for token in doc]
                 await websocket.send(json.dumps(heads))
             elif command == 'DOCDEPENDENCIES':
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 deps = [token.dep_ for token in doc]
                 await websocket.send(json.dumps(deps))
             elif command == 'DOCENTITIES':
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 ents = [[ent.text,
                          ent.start_char,
                          ent.end_char,
@@ -434,53 +483,53 @@ class parserServer:
                 # List returned contains lists pairing token
                 # offset with token vectors cast as strings
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.token_vectors))
             elif command == 'LEMMAS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(indicator='lemma_')
                 )
             elif command == 'STOPWORDS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(indicator='is_stop')
                 )
             elif command == 'WORDTYPES':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='lower_',filters=[('is_alpha', ['True']),('is_stop', ['False'])],summaryType = 'uniq')
                 ))
             elif command == 'ROOTS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='root')
                 ))
             elif command == 'SYLLABLES':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='nSyll')))
             elif command == 'WORDLENGTH':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='text', filters=[('is_alpha', ['True'])], transformations=['len', 'sqrt'])
                 ))
             elif command == 'LATINATES':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='is_latinate',filters=[('is_alpha', ['True'])])
                 ))
             elif command == 'ACADEMICS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='is_academic',filters=[('is_alpha', ['True'])])
                 ))
@@ -488,37 +537,37 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='nSenses',filters=[('is_alpha', ['True'])])
                 ))
             elif command == 'LOGSENSENUMS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='nSenses',filters=[('is_alpha', ['True'])],transformations=['log'])
                 ))
             elif command  == 'MORPHOLOGY':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='morphology')
                 ))
             elif command == 'MORPHNUMS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='nMorph',filters=[('is_alpha', ['True'])])
                 ))
             elif command == 'HALROOTFREQS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='min_root_freq',filters=[('is_alpha', ['True'])])
                 ))
             elif command == 'HALLOGROOTFREQS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='min_root_freq',filters=[('is_alpha', ['True'])],transformations=['log'])
                 ))
@@ -526,7 +575,7 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='root_famSize',filters=[('is_alpha', ['True'])])
                 ))
@@ -534,7 +583,7 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='root_pfmf',filters=[('is_alpha', ['True'])])
                 ))
@@ -542,7 +591,7 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='family_size',filters=[('is_alpha', ['True'])])
                 ))
@@ -550,7 +599,7 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='token_freq',filters=[('is_alpha', ['True'])])
                 ))
@@ -558,28 +607,28 @@ class parserServer:
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='lemma_freq')))
             elif command == 'ROOTFREQS':
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='root_Freq')))
             elif command == 'MAXFREQS':
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='max_freq')))
             elif command == 'CONCRETES':
                 # Position in the list returned equals position
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='concreteness')))
             elif command == 'ABSTRACTTRAITS':
@@ -587,7 +636,7 @@ class parserServer:
                 # in the document. Flag 1 if the word names an
                 # abstract trait, 0 otherwise
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='abstract_trait')))
             elif command == 'ANIMATES':
@@ -595,7 +644,7 @@ class parserServer:
                 # in the document. Flag 1 if the word names an animate
                 # entity, 0 otherwise
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='animate')))
             elif command == 'LOCATIONS':
@@ -603,7 +652,7 @@ class parserServer:
                 # in the document. Flag 1 if the word names an
                 # animate entity, 0 otherwise
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='location')))
             elif command == 'DEICTICS':
@@ -611,14 +660,14 @@ class parserServer:
                 # the document. Flag 1 if the word names a deictic
                 # element, 0 otherwise
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='deictic')))
             elif command == 'PARAGRAPHS':
                 # Items in the list indicate word offsets in the document
                 # at which paragraph breaks appear
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                                     
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='delimiter_n')
@@ -628,7 +677,7 @@ class parserServer:
                 # Items in the list indicate word offsets in the document
                 # at which paragraph breaks appear
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='sents')
@@ -639,7 +688,7 @@ class parserServer:
                 # Items in the list indicate lengths of paragraphs listed
                 # by offset in GETPARAGRAPHS
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='sents',transformations=['tokenlen'])
                 ))
@@ -654,12 +703,12 @@ class parserServer:
                 #     word the word string, its start and stop offsets,
                 #     and its transition word category.
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.transition_word_profile))
             elif command == 'TRANSITIONS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType='Doc',indicator='transitions')
                 ))
@@ -667,7 +716,7 @@ class parserServer:
                 # List of cosine distances between ten-word windows
                 # before and after a transition
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType='Doc',indicator='transition_distances')
                 ))
@@ -675,7 +724,7 @@ class parserServer:
                 # List of cosine distances between ten-word windows
                 # before and after a sentence boundary
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType='Doc',indicator='intersentence_cohesions')
                 ))
@@ -683,14 +732,14 @@ class parserServer:
                 # List of cosine distances between ten-word windows
                 # before and after a sliding window through the text
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType='Doc',indicator='sliding_window_cohesions')
                 ))
             elif command == 'COREFCHAINS':
                 # List of coreference chains found in document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.coref_chains))
             elif command == 'RHEMEDEPTHS':
@@ -698,7 +747,7 @@ class parserServer:
                 # sentence after the main verb where new information
                 # is usually placed
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType='Doc',indicator='syntacticDepthsOfRhemes')
                 ))
@@ -707,7 +756,7 @@ class parserServer:
                 # of sentence before the main verb where given
                 # information is usually placed
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='syntacticDepthsOfThemes')
                 ))
@@ -716,7 +765,7 @@ class parserServer:
                 # left-embedded structures
                 # that tend to be harder to process
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='weightedSyntacticDepths')
                 ))
@@ -726,7 +775,7 @@ class parserServer:
                 # structures and loosely appended modifiers typical of
                 # spoken, often unplanned sentence production
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='weightedSyntacticBreadths')
                 ))
@@ -738,7 +787,7 @@ class parserServer:
                 # complex sentence, and compound/complex sentence, in
                 # that order.
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType='Doc',indicator='sentence_types')
                 ))
@@ -749,7 +798,7 @@ class parserServer:
                 # of speech, morphological categories, and syntactic
                 # dependencies between specific parts of speech.
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.syntacticProfile))
             elif command == 'NORMEDSYNTACTICPROFILE':
@@ -757,7 +806,7 @@ class parserServer:
                 # frequency information (proportionas) for the
                 # syntactic relations and categories in the text.
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.syntacticProfileNormed))
             elif command == 'QUOTEDTEXT':
@@ -765,7 +814,7 @@ class parserServer:
                 # Position in the list corresponds to offset of token
                 # in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_quoted')
                 ))
@@ -793,7 +842,7 @@ class parserServer:
                 # of a pronominal reference chain that includes
                 # the direct speech frame.
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_direct_speech')
                 ))
@@ -802,7 +851,7 @@ class parserServer:
                 # 0 for other text. Position in the list corresponds to
                 # offset of token in the document
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_in_direct_speech')
                 ))
@@ -812,54 +861,54 @@ class parserServer:
                 # with flag to indicate whether shift was to past
                 # tense or to present tense.
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.vwp_tense_changes))
             elif command == 'PERSPECTIVES':
                 # list of positions where perspective is indicated
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_perspective')
                 ))
             elif command == 'ATTRIBUTIONS':
                 # list of positions where attribution is indicated
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_attribution')
                 ))
             elif command == 'SOURCES':
                 # list of positions where source is indicated
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_source')
                 ))
             elif command == 'CITES':
                 # list of positions where source is indicated
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_cite')
                 ))
             elif command == 'STATEMENTSOFFACT':
                 # list of positions where source is indicated
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_statements_of_fact')
                 ))
             elif command == 'STATEMENTSOFOPINION':
                 # list of positions where source is indicated
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_statements_of_opinion')
                 ))
             elif command == 'PERSPECTIVESPANS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.vwp_perspective_spans))
                 await websocket.send(
@@ -867,7 +916,7 @@ class parserServer:
                 )
             elif command == 'STANCEMARKERS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(doc._.vwp_stance_markers))
                 await websocket.send(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_stance_markers')
@@ -875,154 +924,154 @@ class parserServer:
 
             elif command == 'CLAIMTEXTS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_claim')
                 ))
 
             elif command == 'DISCUSSIONTEXTS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_discussion')
                 ))
 
             elif command == 'EMOTIONWORDS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_emotionword')
                 ))
 
             elif command == 'CHARACTERWORDS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_character_traits')
                 ))
 
             elif command == 'EMOTIONALSTATES':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_emotion_states')
                 )
             elif command == 'CHARACTERTRAITS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.vwp_character_traits))
             elif command == 'PROPOSITIONALATTITUDES':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_propositional_attitudes')
                 ))
             elif command == 'SOCIAL_AWARENESS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(infoType="Doc",indicator='vwp_social_awareness')
                 ))
             elif command == 'CONCRETEDETAILS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(indicator='concrete_detail')
                 )
             elif command == 'INTERACTIVELANGUAGE':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_interactive')
                 ))
             elif command == 'ARGUMENTWORDS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_argumentword')
                 ))
             elif command == 'ARGUMENTLANGUAGE':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_argumentation')
                 ))
             elif command == 'EXPLICITARGUMENTWORDS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='vwp_explicit_argument')
                 ))
             elif command == 'SUBJECTIVITYRATINGS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(                    
                     doc._.AWE_Info(indicator='subjectivity')
                 ))
             elif command == 'SENTIMENTRATINGS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(                    
                     doc._.AWE_Info(indicator='vwp_sentiment')
                 ))
             elif command == 'TONERATINGS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(                    
                     doc._.AWE_Info(indicator='vwp_tone')
                 ))
             elif command == 'POLARITYRATINGS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(                    
                     doc._.AWE_Info(indicator='polarity')
                 ))
             elif command == 'ASSESSMENTS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(doc._.assessments))
             elif command == 'PASTTENSESCOPE':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='in_past_tense_scope')
                 ))
             elif command == 'GOVERNINGSUBJECTS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='governing_subject')
                 ))
             elif command == 'CLUSTERS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='clusterID')
                 ))
             elif command == 'PROMPTLANGUAGE':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(doc._.prompt_language))
             elif command == 'PROMPTRELATED':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(doc._.prompt_related))
             elif command == 'MAINIDEAS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(infoType="Doc",indicator='main_ideas')
                 )
             elif command == 'SUPPORTINGIDEAS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(infoType="Doc",indicator='supporting_ideas')
                 )
             elif command == 'SUPPORTINGDETAILS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(
                     doc._.AWE_Info(infoType="Doc",indicator='supporting_details')
                 )
@@ -1039,13 +1088,13 @@ class parserServer:
                 # 3.  A list of the actual word strings in each cluster
                 # 4.  The offsets of the words assigned to each cluster
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(doc._.clusterInfo))
             elif command == 'DEVWORDS':
                 # offset of the logical subject that governs
                 # the domain this token belongs to
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(
                     doc._.AWE_Info(indicator='devword')
                 ))
@@ -1053,13 +1102,13 @@ class parserServer:
                 # offset of the logical subject that governs
                 # the domain this token belongs to
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 await websocket.send(json.dumps(doc._.nominalReferences))
             elif command == 'DOCSUMMARYLABELS':
                 await websocket.send(json.dumps(self.summaryLabels))
             elif command == 'DOCSUMMARYFEATS':
                 label = messagelist[1]
-                doc = self.parser.get_document(label)
+                doc = self.documents[label]
                 summaryFeats = [
                     doc._.AWE_Info(indicator='nSyll',summaryType="mean"),
                     doc._.AWE_Info(indicator='nSyll',summaryType="median"),
