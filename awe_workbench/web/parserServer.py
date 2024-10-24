@@ -309,7 +309,7 @@ class parserServer:
 
                         if labels[i]in self.documents:
                             del self.documents[labels[i]]
-                        self.documents[labels[i]] = text
+                        self.documents[labels[i]] = self.nlp(text)
                 await websocket.send(json.dumps(True))
             elif command == 'LABELS':
                 # labels = self.parser.list_document_labels()
