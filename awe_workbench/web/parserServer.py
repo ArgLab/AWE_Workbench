@@ -68,190 +68,10 @@ class parserServer:
         await websocket.close()
         exit()
 
-    summaryLabels = [
-        'mean_nSyll',
-        'med_nSyll',
-        'max_nSyll',
-        'min_nSyll',
-        'std_nSyll',
-        'mean_sqnChars',
-        'med_sqnChars',
-        'max_sqnChars',
-        'min_sqnChars',
-        'std_sqnChars',
-        'propn_latinate',
-        'propn_academic',
-        'mean_family_size',
-        'med_family_size',
-        'max_family_size',
-        'min_family_size',
-        'std_family_size',
-        'mean_concreteness',
-        'med_concreteness',
-        'max_concreteness',
-        'min_concreteness',
-        'std_concreteness',
-        'mean_logNSenses',
-        'med_logNSenses',
-        'max_logNSenses',
-        'min_logNSenses',
-        'std_logNSenses',
-        'mean_nMorph',
-        'med_nMorph',
-        'max_nMorph',
-        'min_nMorph',
-        'std_nMorph',
-        'mean_logfreq_HAL',
-        'med_logfreq_HAL',
-        'max_logfreq_HAL',
-        'min_logfreq_HAL',
-        'std_logfreq_HAL',
-        'mean_root_fam_size',
-        'med_root_fam_size',
-        'max_root_fam_size',
-        'min_root_fam_size',
-        'std_root_fam_size',
-        'mean_root_pfmf',
-        'med_root_pfmf',
-        'max_root_pfmf',
-        'min_root_pfmf',
-        'std_root_pfmf',
-        'mean_token_frequency',
-        'median_token_frequency',
-        'max_token_frequency',
-        'min_token_frequency',
-        'std_token_frequency',
-        'mean_lemma_frequency',
-        'median_lemma_frequency',
-        'max_lemma_frequency',
-        'min_lemma_frequency',
-        'std_lemma_frequency',
-        'mean_max_frequency',
-        'median_max_frequency',
-        'max_max_frequency',
-        'min_max_frequency',
-        'std_max_frequency',
-        'propn_abstract_traits',
-        'propn_animates',
-        'propn_deictics',
-        'wf_type_count',
-        'lemma_type_count',
-        'type_count',
-        'token_count',
-        'paragraph_count',
-        'mean_paragraph_length',
-        'median_paragraph_length',
-        'max_paragraph_length',
-        'min_paragraph_length',
-        'stdev_paragraph_length',
-        'propn_transition_words',
-        'transition_category_count',
-        'transition_word_type_count',
-        'mean_transition_distance',
-        'median_transition_distance',
-        'max_transition_distance',
-        'min_transition_distance',
-        'stdev_transition_distance',
-        'mean_sent_cohesion',
-        'median_sent_cohesion',
-        'max_sent_cohesion',
-        'min_sent_cohesion',
-        'stdev_sent_cohesion',
-        'mean_slider_cohesion',
-        'median_slider_cohesion',
-        'max_slider_cohesion',
-        'min_slider_cohesion',
-        'stdev_slider_cohesion',
-        'num_corefs',
-        'mean_coref_chain_len',
-        'median_coref_chain_len',
-        'max_coref_chain_len',
-        'min_coref_chain_len',
-        'stdev_coref_chain_len',
-        'sentence_count',
-        'mean_sentence_len',
-        'median_sentence_len',
-        'max_sentence_len',
-        'min_sentence_len',
-        'std_sentence_len',
-        'mean_words_to_sentence_root',
-        'median_words_to_sentence_root',
-        'max_words_to_sentence_root',
-        'min_words_to_sentence_root',
-        'stdev_words_to_sentence_root',
-        'meanRhemeDepth',
-        'medianRhemeDepth',
-        'maxRhemeDepth',
-        'minRhemeDepth',
-        'stdevRhemeDepth',
-        'meanThemeDepth',
-        'medianThemeDepth',
-        'maxThemeDepth',
-        'minThemeDepth',
-        'stdevThemeDepth',
-        'meanWeightedDepth',
-        'medianWeightedDepth',
-        'maxWeightedDepth',
-        'minWeightedDepth',
-        'stdevWeightedDepth',
-        'meanWeightedBreadth',
-        'medianWeightedBreadth',
-        'maxWeightedBreadth',
-        'minWeightedBreadth',
-        'stdevWeightedBreadth',
-        'syntacticVariety',
-        'propn_past',
-        'propn_argument_words',
-        'propn_direct_speech',
-        'propn_egocentric',
-        'propn_allocentric',
-        'mean_subjectivity',
-        'median_subjectivity',
-        'min_subjectivity',
-        'max_subjectivity',
-        'stdev_subjectivity',
-        'mean_polarity',
-        'median_polarity',
-        'min_polarity',
-        'max_polarity',
-        'stdev_polarity',
-        'mean_sentiment',
-        'median_sentiment',
-        'min_sentiment',
-        'max_sentiment',
-        'stdev_sentiment',
-        'mean_main_cluster_span',
-        'median_main_cluster_span',
-        'min_main_cluster_span',
-        'max_main_cluster_span',
-        'stdev_main_cluster_span',
-        'propn_devwords',
-        'mean_devword_nsyll',
-        'median_devword_nsyll',
-        'min_devword_nsyll',
-        'max_devword_nsyll',
-        'stdev_devword_nsyll',
-        'mean_devword_nmorph',
-        'median_devword_nmorph',
-        'min_devword_nmorph',
-        'max_devword_nmorph',
-        'stdev_devword_nmorph',
-        'mean_devword_nsenses',
-        'median_devword_nsenses',
-        'min_devword_nsenses',
-        'max_devword_nsenses',
-        'stdev_devword_nsenses',
-        'mean_devword_token_freq',
-        'median_devword_token_freq',
-        'min_devword_token_freq',
-        'max_devword_token_freq',
-        'stdev_devword_token_freq',
-        'mean_devword_concreteness',
-        'median_devword_concreteness',
-        'min_devword_concreteness',
-        'max_devword_concreteness',
-        'stdev_devword_concreteness'
-    ]
+    # instead of making the summaryLabels array here (since it is rather large) the contents are now 
+    # stored in the summaryLabels.txt file
+    with open('summaryLabels.txt', 'r') as file:
+        summaryLabels = [line.strip().strip(',') for line in file]
 
     async def run_parser(self, websocket, path):
         current_doc = ''
@@ -270,16 +90,11 @@ class parserServer:
                 label = messagelist[1]
                 if label in self.documents:
                     del self.documents[label]
-                # self.parser.remove_document(label)
                 await websocket.send(json.dumps(True))
             elif command == 'PARSEONE':
                 label = messagelist[1]
                 text = current_doc + messagelist[2]
                 current_doc = ''
-                #if label in self.parser.list_document_labels():
-                #    self.parser.remove_document(label)
-                #self.parser.parse_and_register_document(text, label)
-                #doc = self.parser.get_document(label)
                 if label in self.documents:
                     del self.documents[label]
                 self.documents[label] = text
@@ -296,30 +111,21 @@ class parserServer:
                     text = texts[i]
                     print('parsed document', str(i+1), 'of', len(texts))
                     if text is not None and len(text) > 0:
-                        #if labels[i] in self.parser.list_document_labels():
-                        #    self.parser.remove_document(labels[i])
-                        #self.parser.parse_and_register_document(
-                        #    text, labels[i])
-
                         if labels[i]in self.documents:
                             del self.documents[labels[i]]
                         self.documents[labels[i]] = self.nlp(text)
                 await websocket.send(json.dumps(True))
             elif command == 'LABELS':
-                # labels = self.parser.list_document_labels()
                 labels = list(self.documents.keys())
                 await websocket.send(json.dumps(labels))
             elif command == 'SERIALIZED':
                 label = messagelist[1]
-                #serialized = base64.b64encode(
-                #    self.parser.serialize_document(label))
                 serialized = base64.b64encode(
                     self.documents[label].encode('utf-8'))
                 await websocket.send(serialized)
             elif command == 'NEWSEARCHPHRASE':
                 search_phrase_text = messagelist[1]
                 label = messagelist[2]
-                # ok = self.parser.register_search_phrase(search_phrase_text)
                 ok = (search_phrase_text in self.documents[label])
                 await websocket.send(ok)
             elif command == 'REMOVELABELEDSEARCH':
@@ -350,36 +156,14 @@ class parserServer:
                 # expose all of these parameters in more complex topic
                 # match functionality. Holmes extractor documentation
                 # describes what each of these parameters involves.
-                
-                #matches = self.parser.topic_match_documents_against(
-                #    text_to_match,
-                #    word_embedding_match_threshold=.42,
-                #    relation_score=20,
-                #    reverse_only_relation_score=15,
-                #    single_word_score=10,
-                #    single_word_any_tag_score=5,
-                #   different_match_cutoff_score=10,
-                #   relation_matching_frequency_threshold=0.0,
-                #    embedding_matching_frequency_threshold=0.0,
-                #    use_frequency_factor=True)
-                
                 if text_to_match in self.documents:
                     matches = self.documents[text_to_match]
                 #TODO need an else block I think
                 await websocket.send(json.dumps(matches))
-            # Holmes Extractor also has supervised topic model
-            # building facilities using the functions
-            # get_supervised_topic_training_basis(),
-            # and deserialize_supervised_topic_classifier().
-            # TBD: Add support for Holmes supervised topic model
-            #      building.
             elif command == 'AWE_INFO':
                 label = messagelist[1]
                 doc = self.documents[label]
-                indic = None
-                itype = None
-                summ = None
-                filt = None
+                indic, itype, summ, filt = None
                 if len(messagelist) == 3:
                     indic = messagelist[2]
                     await websocket.send(
@@ -422,8 +206,7 @@ class parserServer:
                     if type(result) in [int, float]:
                         await websocket.send(str(result))
                     else:
-                        await websocket.send(result)
-                                      
+                        await websocket.send(result)         
                 else:
                     await websocket.send(json.dumps([]))
             elif command == 'DOCTOKENS':
