@@ -10,12 +10,6 @@ import spacy
 import coreferee
 import spacytextblob.spacytextblob
 
-# commented out cause we dont use them anymore
-# import holmes_extractor
-# import holmes_extractor.manager
-# import holmes_extractor.ontology
-# from holmes_extractor.manager import Manager
-# from holmes_extractor.ontology import Ontology
 from awe_components.components.utility_functions import content_pos
 import awe_components.components.lexicalFeatures
 import awe_components.components.syntaxDiscourseFeats
