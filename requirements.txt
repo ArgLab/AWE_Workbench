@@ -1,7 +1,6 @@
-AWE_LanguageTool @ git+https://github.com/ArgLab/AWE_LanguageTool.git
-AWE_SpellCorrect @ git+https://github.com/ArgLab/AWE_SpellCorrect.git
-AWE_Components @ git+https://github.com/ArgLab/AWE_Components.git
-AWE_Lexica @ git+https://github.com/ArgLab/AWE_Lexica.git
+awe_languagetool @ git+https://github.com/ArgLab/AWE_LanguageTool.git
+awe_spellcorrect @ git+https://github.com/ArgLab/AWE_SpellCorrect.git
+awe_components @ git+https://github.com/ArgLab/AWE_Components.git
 websockets
 websocket-client
 aiohttp
