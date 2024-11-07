@@ -1,7 +1,7 @@
-awe_languagetool
-awe_spellcorrect
-awe_components
-awe_lexica
+AWE_SpellCorrect @ git+https://github.com/ArgLab/AWE_SpellCorrect.git
+AWE_Components @ git+https://github.com/ArgLab/AWE_Components.git
+AWE_Lexica @ git+https://github.com/ArgLab/AWE_Lexica.git
+AWE_LanguageTool @ git+https://github.com/ArgLab/AWE_LanguageTool.git
 holmes_extractor
 coreferee
 spacy
