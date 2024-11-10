@@ -69,8 +69,11 @@ class parserServer:
         await websocket.close()
         exit()
         
-
-
+    '''
+    This is a function that iterates over a JSON with the contents of AWE_INFO objects
+    This function also serves the purpose of making all the objects which can be used
+    later on (as opposed to creating them later)
+    '''
     def getSummaryFeats(self, file_name):
         # Load JSON file
         with open(file_name, 'r') as file:
@@ -119,6 +122,10 @@ class parserServer:
         summaryLabels = [line.strip().strip(',') for line in file]
 
     async def run_parser(self, websocket, path):
+        # we're making this up here, so that if any of these AWE_info objects are used later
+        # we can just grab it from in here instead of creating it in more than one place
+        summaryFeats = self.getSummaryFeats('summaryFeatsConfig.json')
+
         current_doc = ''
         async for message in websocket:
 
