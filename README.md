@@ -99,3 +99,14 @@ Applications
 Like most state-of-the-art AWE systems, the AWE Workbench can be used to extract summary features that can be used to predict human scores or classify student responses into meaningful categories. We are currently validating these uses with publicly available datasets. However, since equivalent features to those deployed by the AWE Workbench have already been validated elsewhere, the user can proceed with similar applications in advance of our completion of this effort. We will include a script for extracting summary features with the distribution we are preparing for public release.
 
 
+============================
+AWE_Info Indicators
+============================
+
+| Indicators | Related parameters | Details   |
+|----------  |----------          |---------- |
+| Row        | Data               | More data |
+| Row        | Data               | More data |
+| Row        | Data               | More data |
+
+
