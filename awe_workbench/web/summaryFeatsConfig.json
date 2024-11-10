@@ -1,0 +1,283 @@
+[
+    {
+        "indicator": "nSyll", 
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"],
+        "docstring": ""
+    },
+    {
+        "indicator": "text",
+        "filters": [["is_alpha", ["True"]]],
+        "transformations": ["len", "sqrt"],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"],
+    },
+    {
+        "indicator": "is_latinate",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["proportion"]
+    },
+    {
+        "indicator": "is_academic",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["proportion"]
+    },
+    {
+        "indicator": "token_freq",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "family_size",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "concreteness",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+
+    },
+    {
+        "indicator": "nSenses",
+        "filters": [["is_alpha", ["True"]]],
+        "transformations" : [["log"]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "nMorph",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "min_root_freq",
+        "filters": [["is_alpha", ["True"]]],
+        "transformations" : [["log"]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "root_famSize",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "root_pfmf",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "token_freq",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "lemma_freq",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "max_freq",
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "min_root_freq",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator": "abstract_trait",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator": "animate",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator": "deictic",
+        "filters": [["is_alpha", ["True"]]],
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator": "root",
+        "filters": [["is_alpha", ["True"]],["is_stop", ["False"]], ["pos_", ["NOUN", "PROPN", "VERB", "ADJ", "ADV", "CD"]]],
+        "summaryTypes": "total"
+    },
+    {
+        "indicator": "lemma_",
+        "filters": [["is_alpha", ["True"]],["is_stop", ["False"]], ["pos_", ["NOUN", "PROPN", "VERB", "ADJ", "ADV", "CD"]]],
+        "summaryTypes": "total"
+    },
+    {
+        "indicator": "lower_",
+        "filters": [["is_alpha", ["True"]],["is_stop", ["False"]], ["pos_", ["NOUN", "PROPN", "VERB", "ADJ", "ADV", "CD"]]],
+        "summaryTypes": "total"
+    },
+    {
+        "indicator": "text",
+        "filters": [["is_alpha", ["True"]],["is_stop", ["False"]], ["pos_", ["NOUN", "PROPN", "VERB", "ADJ", "ADV", "CD"]]],
+        "summaryTypes": "total"
+    },
+    {
+        "infoType": "Doc",
+        "indicator":"delimiter_n",
+        "summaryType":"total"
+    },
+    {
+        "infoType": "Doc",
+        "transformations" : [["tokenlen"]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "transitions",
+        "summaryTypes": "proportion"
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "transitions",
+        "summaryTypes": "total"
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "transitions",
+        "transformations": [["text"]],
+        "summaryTypes": "counts"
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "transition_distances",
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "intersentence_cohesions",
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "sliding_window_cohesions",
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "corefChainInfo",
+        "summaryTypes": "count"
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "corefChainInfo",
+        "transformations": [["len"]],
+        "summaryTypes": ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "sents",
+        "summaryTypes": "counts"
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "sents",
+        "transformations": [["len"]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "sents",
+        "transformations": [["len"]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "sentenceThemes",
+        "transformations": [["tokenlen"]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "syntacticDepthsOfRhemes",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "syntacticDepthsOfThemes",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "weightedSyntacticDepth",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "weightedSyntacticBreadth",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "in_past_tense_scope",
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator" : "vwp_argumentation",
+        "summaryTypes": "proportion"
+    },
+    {
+        "infoType": "Doc",
+        "indicator" : "in_past_tense_scope",
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator" : "vwp_egocentric",
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator" : "vwp_allocentric",
+        "summaryTypes": "proportion"
+    },
+    {
+        "indicator" : "subjectivity",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "polarity",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "vwp_sentiment",
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "infoType" : "Doc",
+        "indicator" : "main_cluster_spans",
+        "transformations" : [["len"]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "devword",
+        "summaryTypes":  "proportion"
+    },
+    {
+        "indicator" : "nSyll",
+        "filters" : [["is_alpha", ["True"]],["devword", ["True"]]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "nMorph",
+        "filters" : [["is_alpha", ["True"]],["devword", ["True"]]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "nSenses",
+        "filters" : [["is_alpha", ["True"]],["devword", ["True"]]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "token_freq",
+        "filters" : [["is_alpha", ["True"]],["devword", ["True"]]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    },
+    {
+        "indicator" : "concreteness",
+        "filters" : [["is_alpha", ["True"]],["devword", ["True"]]],
+        "summaryTypes":  ["mean", "median", "max", "min", "stdev"]
+    }
+]
