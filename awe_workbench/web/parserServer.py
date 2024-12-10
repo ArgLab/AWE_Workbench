@@ -127,6 +127,9 @@ class parserServer:
         summaryFeats = self.getSummaryFeats('summaryFeatsConfig.json')
 
         current_doc = ''
+
+        #the below commands are what batchSummary uses. There used to be a LOT more (1000+ lines of info)
+        # but this should be the core functionality for now
         async for message in websocket:
 
             messagelist = json.loads(message)
@@ -152,6 +155,11 @@ class parserServer:
                 self.documents[label] = text
                 self.documents[label] = text
                 doc = self.documents[label]
+                await websocket.send(json.dumps(True))
+            elif command == 'REMOVE':
+                label = messagelist[1]
+                if label in self.documents:
+                    del self.documents[label]
                 await websocket.send(json.dumps(True))
             elif command == 'PARSESET':
                 [labels, texts] = messagelist[1]
